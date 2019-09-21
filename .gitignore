@@ -1,0 +1,9 @@
+# Ignore my Roadmap.md
+Roadmap\.md
+
+# No analysation results should be commited
+ImportedClasses/
+ImportedClasses/*
+
+# No configurations should be commited
+Configurations/configurations\.csv
