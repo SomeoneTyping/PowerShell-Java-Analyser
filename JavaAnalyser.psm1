@@ -26,4 +26,6 @@ foreach ($file in @($PublicFunctions + $PrivateFunctions)) {
 Set-Alias -Name init            -Value Initialize-JavaProject
 Set-Alias -Name reveal          -Value Show-PsObject
 
+Set-Alias -Name generate        -Value Format-JavaMember
+
 Export-ModuleMember -Function $PublicFunctions.BaseName -Alias *

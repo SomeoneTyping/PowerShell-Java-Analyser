@@ -18,6 +18,7 @@ function Initialize-JavaProject {
     )
 
     begin {
+        $importTimestamp = (Get-Date).ToString("dd.MM.yyyy HH:mm")
         $importFolder = Get-FileLocationImportFolder
         if ((-not $First) -and (-not $Skip)) {
             Remove-Item -Path $importFolder -Recurse -Include *.csv
@@ -46,7 +47,7 @@ function Initialize-JavaProject {
 
         foreach ($file in $allJavaFiles) {
             Write-Host ([string]::Format("[{0}/{1}] Importing {2}.", $counter, $totalFilesCount, $file.FullName))
-            $javaPsObject = New-JavaPsObject -Path $file.FullName
+            $javaPsObject = New-JavaPsObject -Path $file.FullName -Timestamp $importTimestamp
             $filePath = Join-Path -Path $importFolder -ChildPath ([string]::Format("{0}.csv", $javaPsObject.package))
             Save-JavaPsObject -JavaClass $javaPsObject -FilePath $filePath
             $counter++
