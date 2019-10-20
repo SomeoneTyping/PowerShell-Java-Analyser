@@ -25,6 +25,7 @@ public class JavaSerializableClass implements Serializable {
     private List<Id> extendsClasses = new LinkedList<>();
     private List<Id> implementsInterfaces = new LinkedList<>();
     private List<Member> members = new LinkedList<>();
+    private List<String> enumEntries = new LinkedList<>();
     private boolean containsSubclasses = false;
     private boolean isTestClass = false;
 }

@@ -14,6 +14,7 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.EnumConstantDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
@@ -51,7 +52,7 @@ public class JavaParsingWorker {
         firstClassDeclaration.ifPresent(classOrInterfaceDec -> grazeFirstClassDeclaration(result, idCreator, classOrInterfaceDec));
 
         Optional<EnumDeclaration> enumDeclaration = compilationUnit.findFirst(EnumDeclaration.class);
-        enumDeclaration.ifPresent(enumDec -> graceEnumDeclaration(result, enumDec));
+        enumDeclaration.ifPresent(enumDec -> graceEnumDeclaration(result, idCreator, enumDec));
 
         return result;
     }
@@ -101,7 +102,7 @@ public class JavaParsingWorker {
                 .anyMatch(mem -> analyseAnnotationsIfTheyContainTestAnnotation(mem.getAnnotations())));
     }
 
-    private void graceEnumDeclaration(JavaSerializableClass result, EnumDeclaration enumDeclaration) {
+    private void graceEnumDeclaration(JavaSerializableClass result, IdCreator idCreator, EnumDeclaration enumDeclaration) {
 
         result.setEnum(enumDeclaration.isEnumDeclaration());
 
@@ -113,6 +114,16 @@ public class JavaParsingWorker {
 
         result.setClassAnnotations(enumDeclaration.getAnnotations().stream()
                 .map(a -> a.getName().asString())
+                .collect(Collectors.toList()));
+
+        result.setEnumEntries(enumDeclaration.getEntries().stream()
+                .filter(EnumConstantDeclaration::isEnumConstantDeclaration)
+                .map(e -> e.getName().asString())
+                .collect(Collectors.toList()));
+
+        result.setMembers(enumDeclaration.getMembers().stream()
+                .filter(BodyDeclaration::isFieldDeclaration)
+                .map(mem -> convertFieldDeclarationToMember((FieldDeclaration)mem, idCreator))
                 .collect(Collectors.toList()));
     }
 

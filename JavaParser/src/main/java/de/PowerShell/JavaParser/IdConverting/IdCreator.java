@@ -1,11 +1,15 @@
 package de.PowerShell.JavaParser.IdConverting;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import de.PowerShell.JavaParser.parsedResults.Id;
 
 public class IdCreator {
+
+    private static List<String> primitiveTypes = Arrays.asList("boolean", "byte", "char", "short", "int", "long", "float", "double", "void");
+    private static List<String> javaLangTypes = Arrays.asList("Boolean", "Byte", "Short", "Integer", "Long", "Float", "Double", "String");
 
     private List<Id> importDeclarations;
     private String packageDeclaration;
@@ -21,6 +25,14 @@ public class IdCreator {
 
         if (id == null) {
             return null;
+        }
+
+        if (primitiveTypes.contains(id)) {
+            return Id.valueOf(id);
+        }
+
+        if (javaLangTypes.contains(id)) {
+            return Id.valueOf(String.format("java.lang.%s", id));
         }
 
         if (classIdentifiers != null && !classIdentifiers.isEmpty()) {

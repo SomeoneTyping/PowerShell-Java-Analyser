@@ -32,6 +32,8 @@ public class JavaParsingWorkerTest {
         assertEquals("de.PowerShell.JavaParser.exampleClasses.SuperHeroes.IronMan", simpleClass.getId().getIdAsString());
         assertEquals("de.PowerShell.JavaParser.exampleClasses.SuperHeroes", simpleClass.getPackageOfClass());
         assertEquals("IronMan", simpleClass.getName());
+        assertTrue(simpleClass.getMembers().stream().anyMatch(m -> m.getType().equals("int")));
+        assertTrue(simpleClass.getMembers().stream().anyMatch(m -> m.getType().equals("java.lang.Integer")));
         assertFalse(simpleClass.isContainsSubclasses());
         assertFalse(simpleClass.isTestClass());
     }
@@ -48,7 +50,7 @@ public class JavaParsingWorkerTest {
         assertEquals("EvilVillain", simpleClass.getName());
         assertTrue(simpleClass.isEnum());
         assertTrue(simpleClass.getImports().isEmpty());
-        assertTrue(simpleClass.getMembers().isEmpty());
+        assertEquals("value", simpleClass.getMembers().get(0).getName());
         assertTrue(simpleClass.getClassAnnotations().isEmpty());
         assertTrue(simpleClass.getExtendsClasses().isEmpty());
         assertTrue(simpleClass.getImplementsInterfaces().isEmpty());
