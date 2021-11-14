@@ -1,6 +1,7 @@
 ﻿<#
     .SYNOPSIS
-    [CSV] Sucht in der übergebenen CSV-Datei nach Einträgen, die einen Wert enthalten. Die Suche ist nicht case-sensitive.
+    Searches in a given *.csv-file for entries that contain a given value under a given key.
+    When the file does not exists, it returns $null.
 #>
 function Get-CsvValues {
 
@@ -8,32 +9,33 @@ function Get-CsvValues {
         [Parameter( Mandatory )]
         [ValidateNotNullOrEmpty()]
         [string]
-        $path,
+        $Path,
 
         [string]
-        $key,
+        $Key,
 
         [Alias("value")]
         [string]
-        $valueContains
+        $ValueContains
     )
 
     process {
 
-        Write-Debug "[Get-CsvValues] BLUBB Path: $path, Key: $key, ValueContains: $valueContains"
+        Write-Debug "[Get-CsvValues] Path: $Path, Key: $Key, ValueContains: $ValueContains"
 
-        $table = Import-Csv -Delimiter "," -Path $path
-        if (-not $table) {
-            return
+        if (-not (Test-Path $Path)) {
+            return $null
         }
 
-        if (-not ($key -and $valueContains)) {
+        $table = Import-Csv -Delimiter "," -Path $Path
+
+        if (-not ($Key -and $ValueContains)) {
             return $table
         }
 
         $selectedEntries = $table
-        if ($valueContains -ne "*") {
-            $selectedEntries = $table | Where-Object { $_.$key.ToLower().Contains($valueContains.ToLower()) }
+        if ($ValueContains -ne "*") {
+            $selectedEntries = $table | Where-Object { $_.$Key.ToLower().Contains($ValueContains.ToLower()) }
         }
 
         return $selectedEntries

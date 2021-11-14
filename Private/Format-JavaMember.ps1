@@ -40,8 +40,8 @@ function Format-JavaMember {
             $setter = Format-String -Input $member.name -Setter
             $camelcase = Format-String -Input $member.name -CamelCase
             $titleCase = Format-String -Input $member.name -TitleCase
-            $capitalcase = Format-String -Input $member.name -CapitalCase
-            $resultList += $format.Replace("[member]", $member.name).Replace("[getter]", $getter).Replace("[setter]", $setter).Replace("[camelcase]", $camelcase).Replace("[titlecase]", $titleCase).Replace("[capitalcase]", $capitalcase)
+            $uppercase = Format-String -Input $member.name -CapitalCase
+            $resultList += $format.Replace("[member]", $member.name).Replace("[getter]", $getter).Replace("[setter]", $setter).Replace("[camelcase]", $camelcase).Replace("[titlecase]", $titleCase).Replace("[uppercase]", $uppercase)
         }
 
         return $resultList

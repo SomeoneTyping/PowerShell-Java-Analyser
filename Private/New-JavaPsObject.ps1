@@ -8,10 +8,7 @@ function New-JavaPsObject {
         [Parameter( Mandatory )]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Path,
-
-        [string]
-        $Timestamp
+        $Path
     )
 
     begin {
@@ -28,7 +25,7 @@ function New-JavaPsObject {
 
         $programOutput = java -cp $pathToParsingJar "de.PowerShell.JavaParser.Application" $Path
         if ($?) {
-            return $programOutput | ConvertFrom-Json | Convert-JsonObjectToJavaClass -ImportTimestamp $Timestamp
+            return $programOutput | ConvertFrom-Json | Convert-JsonObjectToJavaClass
         } else {
             throw $programOutput
         }

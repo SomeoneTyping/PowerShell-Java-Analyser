@@ -17,8 +17,8 @@ function Save-JavaPsObject {
             return
         }
 
+        # Flatten first level objects
         $objectToSave = New-Object PsObject
-
         $properties = $JavaClass | Get-Member -MemberType NoteProperty
         foreach($property in $properties) {
             $type = $property.Definition.ToString().Split()[0]
@@ -42,6 +42,7 @@ function Save-JavaPsObject {
             }
         }
 
+        # Save the flattened object
         $objectToSave | Export-Csv -Path $FilePath -Delimiter "," -Append -NoTypeInformation
     }
 }
