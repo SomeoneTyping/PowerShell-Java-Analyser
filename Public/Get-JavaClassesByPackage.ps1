@@ -10,7 +10,7 @@ function Get-JavaClassesByPackage {
     )
 
     process {
-        
+
         $filteredClasses = @()
         $packageString = $Package.Replace(".","_")
 

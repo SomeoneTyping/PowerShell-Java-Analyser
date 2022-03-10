@@ -19,7 +19,10 @@ function Format-JavaMember {
 
         [Alias("ex")]
         [string]
-        $ExcludeModifier
+        $ExcludeModifier,
+
+        [string]
+        $JoinCharacter
     )
 
     process {
@@ -38,10 +41,17 @@ function Format-JavaMember {
         foreach($member in $members) {
             $getter = Format-String -Input $member.name -Getter
             $setter = Format-String -Input $member.name -Setter
-            $camelcase = Format-String -Input $member.name -CamelCase
-            $titleCase = Format-String -Input $member.name -TitleCase
-            $uppercase = Format-String -Input $member.name -CapitalCase
-            $resultList += $format.Replace("[member]", $member.name).Replace("[getter]", $getter).Replace("[setter]", $setter).Replace("[camelcase]", $camelcase).Replace("[titlecase]", $titleCase).Replace("[uppercase]", $uppercase)
+            $capitalCase = Format-String -Input $member.name -CapitalCase
+            $index = $member.type.LastIndexOf(".")
+            $rawType = $member.type.Substring($index+1)
+            $value = Get-GeneratedValue -MemberObject $member
+            $replacedFormatString = $format.Replace("[member]", $member.name).Replace("[getter]", $getter).Replace("[setter]", $setter).Replace("[value]", $value)
+            $replacedFormatString = $replacedFormatString.Replace("[capital]", $capitalCase).Replace("[type]", $rawType);
+            $resultList += $replacedFormatString
+        }
+
+        if ($JoinCharacter) {
+            return ($resultList -join $JoinCharacter)
         }
 
         return $resultList
