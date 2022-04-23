@@ -22,10 +22,24 @@ function Format-JavaMember {
         $ExcludeModifier,
 
         [string]
-        $JoinCharacter
+        $JoinCharacter,
+
+        [switch]
+        $Help
     )
 
     process {
+
+        if ($Help.IsPresent) {
+            Write-Host "Format-Variables: "
+            Write-Host "[member]  : Replaced by the raw member name."
+            Write-Host "[getter]  : Replaced by the getter."
+            Write-Host "[setter]  : Replaced by the setter."
+            Write-Host "[value]   : Replaced by a random value."
+            Write-Host "[capital] : Replaced by the member name in capital case."
+            Write-Host "[type]    : Replaced by the type of the member."
+            return
+        }
 
         if ((-not (Test-Path $Path)) -or (-not $Path.EndsWith(".java"))) {
             throw "[Format-JavaMember] The given path '$Path' does not point to a *.java file."

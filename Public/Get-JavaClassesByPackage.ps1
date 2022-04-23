@@ -6,27 +6,37 @@ function Get-JavaClassesByPackage {
     param (
         [Parameter( Mandatory )]
         [string]
-        $Package
+        $Package,
+
+        [Parameter( ValueFromPipeline )]
+        [PsObject]
+        $PipeObject
     )
 
     process {
 
-        $filteredClasses = @()
+        # Modus: Filter in pipeline
+        if ($PipeObject -and $PipeObject.package) {
+            if ($PipeObject.package.Contains($Package)) {
+                return $PipeObject
+            }
+
+            return Out-Null -InputObject $PipeObject
+        }
+
+        # Modus: Search in imported files
         $packageString = $Package.Replace(".","_")
 
-        Write-Host "Import-JavaClassesByImport"
         $folderPath = Get-FileLocationImportFolder
         $allSavedFiles = Get-Childitem -Path $folderPath -Recurse -Filter "*.csv"
         foreach($file in $allSavedFiles) {
             $currentPackageString = ($file.FullName | Split-Path -Leaf).Replace(".csv","")
-            if ($currentPackageString.StartsWith($packageString)) {
+            if ($currentPackageString.Contains($packageString)) {
                 $importedClasses = Import-Csv -Delimiter "," -Path $file.FullName
                 foreach($class in $importedClasses) {
-                    $filteredClasses += $class
+                    return $class
                 }
             }
         }
-
-        return $filteredClasses
     }
 }

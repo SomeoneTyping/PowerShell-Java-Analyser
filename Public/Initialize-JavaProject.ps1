@@ -12,7 +12,7 @@ function Initialize-JavaProject {
     begin {
 
         if (-not (Test-Path -PathType Container -Path $Folder)) {
-            Write-Error "[Initialize-JavaProject] The path '$Folder' does not point to a valid folder."
+            Write-Error "[Initialize-JavaProject] The given path does not point to a valid folder."
             return
         }
 

@@ -25,6 +25,9 @@ function Get-GeneratedValue {
             "Instant" {
                 $result = "Instant.now()"
             }
+            "boolean" {
+                $result = "true"
+            }
             "LocalDateTime" {
                 $date = Get-Date
                 $year = $date.Year
@@ -33,6 +36,13 @@ function Get-GeneratedValue {
                 $hour = $date.Hour
                 $minute = $date.Minute
                 $result = "LocalDateTime.of($year, $month, $day, $hour, $minute, 0)"
+            }
+            "LocalDate" {
+                $date = Get-Date
+                $year = $date.Year
+                $month = $date.Month
+                $day = $date.Day
+                $result = "LocalDate.of($year, $month, $day)"
             }
             Default {
                 $result = $rawType

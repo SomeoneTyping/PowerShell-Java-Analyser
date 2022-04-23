@@ -1,4 +1,4 @@
-function Get-JavaClassesByImport {
+function Get-JavaClassesByName {
 <#
     .SYNOPSIS
     Imports parsed classes from csv-Files to PSObjects for the command line
@@ -6,7 +6,7 @@ function Get-JavaClassesByImport {
     param (
         [Parameter( Mandatory )]
         [string]
-        $Package,
+        $Search,
 
         [Parameter( ValueFromPipeline )]
         [PsObject]
@@ -16,10 +16,9 @@ function Get-JavaClassesByImport {
     process {
 
         # Modus: Filter in pipeline
-        if ($PipeObject -and $PipeObject.imports) {
-            $splittedImports = $PipeObject.imports.Split(";")
-            $results = $splittedImports | Where-Object { $_.Contains($Package) }
-            if ($results) {
+        if ($PipeObject) {
+            $className = $PipeObject.id.Substring($PipeObject.id.LastIndexOf(".")+1)
+            if ($className.Contains($Search)) {
                 return $PipeObject
             }
 
@@ -27,15 +26,11 @@ function Get-JavaClassesByImport {
         }
 
         # Modus: Search in imported files
-
         $allImportedClasses = Get-AllImportedClasses
         foreach($class in $allImportedClasses) {
-            if ($class.imports) {
-                $splittedImports = $class.imports.Split(";")
-                $results = $splittedImports | Where-Object { $_.Contains($Package) }
-                if ($results) {
-                    Write-Output $class
-                }
+            $className = $class.id.Substring($class.id.LastIndexOf(".")+1)
+            if ($className.Contains($Search)) {
+                Write-Output $class
             }
         }
     }
