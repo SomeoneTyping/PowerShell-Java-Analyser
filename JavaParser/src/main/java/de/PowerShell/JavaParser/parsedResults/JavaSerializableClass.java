@@ -1,12 +1,12 @@
 package de.PowerShell.JavaParser.parsedResults;
 
-import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.List;
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -25,7 +25,7 @@ public class JavaSerializableClass implements Serializable {
     private List<Id> extendsClasses = new LinkedList<>();
     private List<Id> implementsInterfaces = new LinkedList<>();
     private List<Member> members = new LinkedList<>();
+    private List<Method> methods = new LinkedList<>();
     private List<String> enumEntries = new LinkedList<>();
-    private boolean containsSubclasses = false;
     private boolean isTestClass = false;
 }

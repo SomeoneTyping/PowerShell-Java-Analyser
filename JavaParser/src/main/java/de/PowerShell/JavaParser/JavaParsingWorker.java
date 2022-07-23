@@ -1,15 +1,9 @@
 package de.PowerShell.JavaParser;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.BodyDeclaration;
@@ -17,44 +11,129 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.EnumConstantDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-
 import de.PowerShell.JavaParser.IdConverting.IdCreator;
 import de.PowerShell.JavaParser.parsedResults.Id;
 import de.PowerShell.JavaParser.parsedResults.JavaSerializableClass;
 import de.PowerShell.JavaParser.parsedResults.Member;
+import de.PowerShell.JavaParser.parsedResults.Method;
+import de.PowerShell.JavaParser.parsedResults.MethodParameter;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class JavaParsingWorker {
 
-    public JavaSerializableClass parse(File fileToAnalyse) throws FileNotFoundException {
+    public List<JavaSerializableClass> parse(File fileToAnalyse) throws FileNotFoundException {
 
         CompilationUnit compilationUnit = StaticJavaParser.parse(fileToAnalyse);
 
-        JavaSerializableClass result = new JavaSerializableClass();
-
+        // Stuff for all classes in the file
         Optional<PackageDeclaration> packageDeclaration = compilationUnit.findFirst(PackageDeclaration.class);
-        packageDeclaration.ifPresent(packageDec -> result.setPackageOfClass(packageDec.getName().asString()));
-
         List<ImportDeclaration> importDeclarations = compilationUnit.findAll(ImportDeclaration.class);
-        grazeImportDeclarations(result, importDeclarations);
+
+        List<JavaSerializableClass> resultList = new LinkedList<>();
 
         List<ClassOrInterfaceDeclaration> allClasses = compilationUnit.findAll(ClassOrInterfaceDeclaration.class);
+
         List<String> classIdentifiers = allClasses.stream()
                 .filter(cl -> cl.getFullyQualifiedName().isPresent())
                 .map(optional -> optional.getFullyQualifiedName().get())
                 .collect(Collectors.toList());
 
-        IdCreator idCreator = IdCreator.getCreatorFor(result.getImports(), result.getPackageOfClass(), classIdentifiers);
-
-        result.setContainsSubclasses(allClasses.size() > 1);
-        Optional<ClassOrInterfaceDeclaration> firstClassDeclaration = allClasses.stream().findFirst();
-        firstClassDeclaration.ifPresent(classOrInterfaceDec -> grazeFirstClassDeclaration(result, idCreator, classOrInterfaceDec));
-
         Optional<EnumDeclaration> enumDeclaration = compilationUnit.findFirst(EnumDeclaration.class);
-        enumDeclaration.ifPresent(enumDec -> graceEnumDeclaration(result, idCreator, enumDec));
+        if (enumDeclaration.isPresent()) {
+            JavaSerializableClass resultClass = new JavaSerializableClass();
+            grazeImportDeclarations(resultClass, importDeclarations);
+            packageDeclaration.ifPresent(packageDec -> resultClass.setPackageOfClass(packageDec.getName().asString()));
+            IdCreator idCreator = IdCreator.getCreatorFor(resultClass.getImports(), resultClass.getPackageOfClass(), classIdentifiers);
+            graceEnumDeclaration(resultClass, idCreator, enumDeclaration.get());
+            resultList.add(resultClass);
+        }
 
-        return result;
+        for (ClassOrInterfaceDeclaration currentClass : allClasses) {
+
+            JavaSerializableClass resultClass = new JavaSerializableClass();
+
+            grazeImportDeclarations(resultClass, importDeclarations);
+            packageDeclaration.ifPresent(packageDec -> resultClass.setPackageOfClass(packageDec.getName().asString()));
+            IdCreator idCreator = IdCreator.getCreatorFor(resultClass.getImports(), resultClass.getPackageOfClass(), classIdentifiers);
+
+            resultClass.setInterface(currentClass.isInterface());
+            resultClass.setAbstract(currentClass.isAbstract());
+            resultClass.setName(currentClass.getName().getIdentifier());
+
+            List<Method> resultMethods = grazeMethods(currentClass, idCreator);
+            resultClass.setMethods(resultMethods);
+
+            Optional<String> fullQualifiedName = currentClass.getFullyQualifiedName();
+            if (fullQualifiedName.isPresent()) {
+                resultClass.setId(Id.valueOf(currentClass.getFullyQualifiedName().get()));
+            }
+
+            NodeList<ClassOrInterfaceType> extendsTypes = currentClass.getExtendedTypes();
+            resultClass.setExtendsClasses(extendsTypes.stream()
+                    .map(ext -> ext.isPrimitiveType() ? Id.valueOf(ext.getName().asString()) : idCreator.createAbsoluteId(ext.getName().asString()))
+                    .collect(Collectors.toList()));
+
+            NodeList<ClassOrInterfaceType> implementsTypes = currentClass.getImplementedTypes();
+            resultClass.setImplementsInterfaces(implementsTypes.stream()
+                    .map(impl -> idCreator.createAbsoluteId(impl.getNameAsString()))
+                    .collect(Collectors.toList()));
+
+            resultClass.setClassAnnotations(currentClass.getAnnotations().stream()
+                    .map(a -> a.getName().asString())
+                    .collect(Collectors.toList()));
+
+            resultClass.setMembers(currentClass.getMembers().stream()
+                    .filter(BodyDeclaration::isFieldDeclaration)
+                    .map(mem -> convertFieldDeclarationToMember((FieldDeclaration)mem, idCreator))
+                    .collect(Collectors.toList()));
+
+            resultClass.setTestClass(currentClass.getMembers().stream()
+                    .filter(BodyDeclaration::isMethodDeclaration)
+                    .anyMatch(mem -> analyseAnnotationsIfTheyContainTestAnnotation(mem.getAnnotations())));
+
+            resultList.add(resultClass);
+        }
+
+        return resultList;
+    }
+
+    private List<Method> grazeMethods(ClassOrInterfaceDeclaration currentClass, IdCreator idCreator) {
+
+        List<Method> resultMethods = new LinkedList<>();
+
+        List<MethodDeclaration> methods = currentClass.findAll(MethodDeclaration.class, Node.TreeTraversal.DIRECT_CHILDREN);
+        for (MethodDeclaration currentMethod : methods) {
+            Method resultMethod = new Method();
+            resultMethod.setModifiers(currentMethod.getModifiers().stream().map(a -> a.getKeyword().asString()).collect(Collectors.joining(" ")));
+            String parsedReturnType = currentMethod.getType().getElementType().isPrimitiveType()
+                    ? currentMethod.getType().getElementType().asString()
+                    : idCreator.createAbsoluteId(currentMethod.getType().getElementType().asString()).getIdAsString();
+            resultMethod.setReturnType(parsedReturnType);
+            resultMethod.setName(currentMethod.getName().asString());
+            NodeList<Parameter> parameters = currentMethod.getParameters();
+            for (Parameter currentParameter : parameters) {
+                MethodParameter resultParameter = new MethodParameter();
+                resultParameter.setName(currentParameter.getNameAsString());
+                String parsedParameterType = currentParameter.getType().getElementType().isPrimitiveType()
+                        ? currentParameter.getType().getElementType().asString()
+                        : idCreator.createAbsoluteId(currentParameter.getType().getElementType().asString()).getIdAsString();
+                resultParameter.setType(parsedParameterType);
+                resultMethod.addMethodParameter(resultParameter);
+            }
+            resultMethods.add(resultMethod);
+        }
+
+        return resultMethods;
     }
 
     private void grazeImportDeclarations(JavaSerializableClass result, List<ImportDeclaration> importDeclarations) {
@@ -64,42 +143,6 @@ public class JavaParsingWorker {
             importsAsIdList.add(Id.valueOf(oneImport.getName().toString()));
         }
         result.setImports(importsAsIdList);
-    }
-
-    private void grazeFirstClassDeclaration(JavaSerializableClass result, IdCreator idCreator,
-            ClassOrInterfaceDeclaration classOrInterfaceDeclaration) {
-
-        result.setInterface(classOrInterfaceDeclaration.isInterface());
-        result.setAbstract(classOrInterfaceDeclaration.isAbstract());
-
-        result.setName(classOrInterfaceDeclaration.getName().getIdentifier());
-        Optional<String> fullQualifiedName = classOrInterfaceDeclaration.getFullyQualifiedName();
-        if (fullQualifiedName.isPresent()) {
-            result.setId(Id.valueOf(classOrInterfaceDeclaration.getFullyQualifiedName().get()));
-        }
-
-        NodeList<ClassOrInterfaceType> extendsTypes = classOrInterfaceDeclaration.getExtendedTypes();
-        result.setExtendsClasses(extendsTypes.stream()
-                .map(ext -> ext.isPrimitiveType() ? Id.valueOf(ext.getName().asString()) : idCreator.createAbsoluteId(ext.getName().asString()))
-                .collect(Collectors.toList()));
-
-        NodeList<ClassOrInterfaceType> implementsTypes = classOrInterfaceDeclaration.getImplementedTypes();
-        result.setImplementsInterfaces(implementsTypes.stream()
-                .map(impl -> idCreator.createAbsoluteId(impl.getNameAsString()))
-                .collect(Collectors.toList()));
-
-        result.setClassAnnotations(classOrInterfaceDeclaration.getAnnotations().stream()
-                .map(a -> a.getName().asString())
-                .collect(Collectors.toList()));
-
-        result.setMembers(classOrInterfaceDeclaration.getMembers().stream()
-                .filter(BodyDeclaration::isFieldDeclaration)
-                .map(mem -> convertFieldDeclarationToMember((FieldDeclaration)mem, idCreator))
-                .collect(Collectors.toList()));
-
-        result.setTestClass(classOrInterfaceDeclaration.getMembers().stream()
-                .filter(BodyDeclaration::isMethodDeclaration)
-                .anyMatch(mem -> analyseAnnotationsIfTheyContainTestAnnotation(mem.getAnnotations())));
     }
 
     private void graceEnumDeclaration(JavaSerializableClass result, IdCreator idCreator, EnumDeclaration enumDeclaration) {

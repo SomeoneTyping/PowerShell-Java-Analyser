@@ -1,13 +1,12 @@
 package de.PowerShell.JavaParser.exampleClasses.SuperHeroes;
 
-import java.util.List;
-
 import de.PowerShell.JavaParser.exampleClasses.Citizens.TonyStark;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -74,6 +73,18 @@ public class IronMan extends TonyStark implements ISuperHero {
 
     public static void setVillain(EvilVillain villain) {
         IronMan.villain = villain;
+    }
+
+    private class Jarvis {
+        private String welcomeCode;
+
+        public Jarvis(String welcomeCode) {
+            this.welcomeCode = welcomeCode;
+        }
+
+        public String getWelcomeCode() {
+            return welcomeCode;
+        }
     }
 
 }

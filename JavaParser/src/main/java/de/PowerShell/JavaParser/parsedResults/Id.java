@@ -1,6 +1,8 @@
 package de.PowerShell.JavaParser.parsedResults;
 
-public class Id {
+import java.io.Serializable;
+
+public class Id implements Serializable {
 
     private String id;
 

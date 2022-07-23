@@ -42,6 +42,9 @@ function Convert-JsonObjectToJavaClass {
         [Object[]]$parsedMembers = if ($JsonObject.members) { $JsonObject.members | Convert-JsonObjectToJavaMember } else { @() }
         Add-Member -InputObject $javaClass -Name "members" -Value $parsedMembers -MemberType NoteProperty
 
+        [Object[]]$parsedMethods = if ($JsonObject.methods) { $JsonObject.methods | Convert-JsonObjectToJavaMethod } else { @() }
+        Add-Member -InputObject $javaClass -Name "methods" -Value $parsedMethods -MemberType NoteProperty
+
         return $javaClass
     }
 }

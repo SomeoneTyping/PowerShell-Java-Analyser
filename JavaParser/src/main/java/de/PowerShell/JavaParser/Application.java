@@ -1,12 +1,12 @@
 package de.PowerShell.JavaParser;
 
+import com.google.gson.Gson;
+import de.PowerShell.JavaParser.parsedResults.JavaSerializableClass;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
-
-import com.google.gson.Gson;
-
-import de.PowerShell.JavaParser.parsedResults.JavaSerializableClass;
+import java.util.List;
 
 public class Application {
 
@@ -20,10 +20,12 @@ public class Application {
         try {
             JavaParsingWorker app = new JavaParsingWorker();
             File file = new File(args[0]);
-            JavaSerializableClass parsedClass = app.parse(file);
-            parsedClass.setPath(args[0]);
+            List<JavaSerializableClass> parsedClasses = app.parse(file);
+            for (JavaSerializableClass parsedClass: parsedClasses) {
+                parsedClass.setPath(args[0]);
+            }
             Gson gson = new Gson();
-            String json = gson.toJson(parsedClass);
+            String json = gson.toJson(parsedClasses);
             System.out.println(json);
         } catch (FileNotFoundException fileEx) {
             System.out.println(fileEx.getMessage());
