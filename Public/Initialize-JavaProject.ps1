@@ -44,8 +44,12 @@ function Initialize-JavaProject {
             } else {
                 Write-Host ([string]::Format("[{0}/{1}] Importing: {2}", $counter, $totalFilesCount, $file.FullName))
                 $javaPsObject = New-JavaPsObject -Path $file.FullName
-                $csvPath = Join-Path -Path $importFolder -ChildPath ([string]::Format("{0}.csv", $javaPsObject.package.Replace(".","_")))
-                Save-JavaPsObject -JavaClass $javaPsObject -FilePath $csvPath
+                # Sometimes there is a non parsable class in the file, skip that
+                if ($javaPsObject) {
+                    $csvPath = Join-Path -Path $importFolder -ChildPath ([string]::Format("{0}.csv", $javaPsObject.package.Replace(".","_")))
+                    # Sometimes there are multiple classes in one file.
+                    $javaPsObject | Foreach-Object { Save-JavaPsObject -JavaClass $_ -FilePath $csvPath }
+                }
             }
 
             $counter++

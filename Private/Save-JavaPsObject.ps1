@@ -13,7 +13,7 @@ function Save-JavaPsObject {
     process {
 
         if (-not $JavaClass.package) {
-            Write-Error "[Save-JavaPsObject] The class " $JavaClass.package " has no package"
+            Write-Error "[Save-JavaPsObject] The class " $FilePath " has no package"
             return
         }
 

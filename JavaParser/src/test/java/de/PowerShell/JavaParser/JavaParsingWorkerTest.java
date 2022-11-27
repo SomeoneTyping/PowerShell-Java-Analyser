@@ -119,4 +119,13 @@ public class JavaParsingWorkerTest {
         assertTrue(simpleClass.getImplementsInterfaces().isEmpty());
         assertTrue(simpleClass.isTestClass());
     }
+
+    @Test
+    public void testParseAEmptyInterface() throws FileNotFoundException {
+
+        String filePath = "src/main/java/de/PowerShell/JavaParser/exampleClasses/EmptyInterface.java";
+        File testFile = new File(filePath);
+        List<JavaSerializableClass> classList = sut.parse(testFile);
+        JavaSerializableClass simpleClass = classList.get(0);
+    }
 }
